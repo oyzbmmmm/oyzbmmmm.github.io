@@ -1,0 +1,557 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="theme-color" content="#0078E7"><meta name="author" content="oliver"><meta name="copyright" content="oliver"><meta name="generator" content="Hexo 6.0.0"><meta name="theme" content="hexo-theme-yun"><title>创建一个可以定时提醒喝水的钉钉机器人 | 时光小站</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@900&amp;display=swap" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/star-markdown-css@0.2.4/dist/yun/yun-markdown.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prism-theme-vars/base.css"><script src="//at.alicdn.com/t/font_1140697_dxory92pb0h.js" async></script><script src="https://cdn.jsdelivr.net/npm/@unocss/runtime/mini.global.js"></script><script src="https://cdn.jsdelivr.net/npm/scrollreveal/dist/scrollreveal.min.js" defer></script><script>function initScrollReveal() {
+  [".post-card",".markdown-body img"].forEach((target)=> {
+    ScrollReveal().reveal(target);
+  })
+}
+document.addEventListener("DOMContentLoaded", initScrollReveal);
+document.addEventListener("pjax:success", initScrollReveal);
+</script><link rel="icon" type="image/svg+xml" href="/yun.svg"><link rel="mask-icon" href="/yun.svg" color="#0078E7"><link rel="preload" href="/css/hexo-theme-yun.css" as="style"><link rel="prefetch" href="/js/sidebar.js" as="script"><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><script id="yun-config">
+    window.Yun = {}
+    window.CONFIG = {"hostname":"oyzbmmmm.github.io","root":"/","title":"时光假寐","version":"1.8.8","mode":"auto","copycode":true,"page":{"isPost":true},"i18n":{"placeholder":"搜索...","empty":"找不到您查询的内容: ${query}","hits":"找到 ${hits} 条结果","hits_time":"找到 ${hits} 条结果（用时 ${time} 毫秒）"},"anonymous_image":"https://cdn.jsdelivr.net/gh/YunYouJun/cdn/img/avatar/none.jpg","say":{"api":"https://v1.hitokoto.cn","hitokoto":true},"local_search":{"path":"/search.xml"},"fireworks":{"colors":["102, 167, 221","62, 131, 225","33, 78, 194"]},"waline":{"config":{"enable":true,"serverURL":"https://waline-blog-rho.vercel.app/","comment":false,"el":"#waline","lang":"zh-CN","path":"/2022/02/21/ding-ding-drink-boot/"},"cdn":"https://cdn.jsdelivr.net/npm/@waline/client/dist/Waline.min.js","dark":"html.dark"},"vendors":{"darken":"https://cdn.jsdelivr.net/npm/darken@1.5.0"}};
+  </script><link rel="stylesheet" href="/css/hexo-theme-yun.css"><script src="/js/hexo-theme-yun.js" type="module"></script><meta name="description" content="需要用到的环境 能运行电脑版钉钉的Windows或者Mac用于获取机器人地址能长期稳定运行node.js环境的电脑或者服务器(需要网络连接)，可以是你自己的电脑，服务器，软路由，群晖，你们公司闲置的电脑或者docker一个node【可选】，如果需要天气预报，需要自行申请百度开发者api密钥，百度天气API开发文档, 以及申请密钥">
+<meta property="og:type" content="article">
+<meta property="og:title" content="创建一个可以定时提醒喝水的钉钉机器人">
+<meta property="og:url" content="https://oyzbmmmm.github.io/2022/02/21/ding-ding-drink-boot/index.html">
+<meta property="og:site_name" content="时光小站">
+<meta property="og:description" content="需要用到的环境 能运行电脑版钉钉的Windows或者Mac用于获取机器人地址能长期稳定运行node.js环境的电脑或者服务器(需要网络连接)，可以是你自己的电脑，服务器，软路由，群晖，你们公司闲置的电脑或者docker一个node【可选】，如果需要天气预报，需要自行申请百度开发者api密钥，百度天气API开发文档, 以及申请密钥">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-02-21T08:42:32.000Z">
+<meta property="article:modified_time" content="2022-02-22T04:05:02.673Z">
+<meta property="article:author" content="oliver">
+<meta property="article:tag" content="机器人">
+<meta name="twitter:card" content="summary"><script>(function() {
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+  const setting = localStorage.getItem('darken-mode') || 'auto'
+  if (setting === 'dark' || (prefersDark && setting !== 'light'))
+    document.documentElement.classList.toggle('dark', true)
+})()</script></head><body><script defer src="https://cdn.jsdelivr.net/npm/animejs@latest"></script><script defer src="/js/ui/fireworks.js" type="module"></script><canvas class="fireworks"></canvas><div class="container"><a class="sidebar-toggle hty-icon-button" id="menu-btn"><div class="hamburger hamburger--spin" type="button"><span class="hamburger-box"><span class="hamburger-inner"></span></span></div></a><div class="sidebar-toggle sidebar-overlay"></div><aside class="sidebar"><script src="/js/sidebar.js" type="module"></script><ul class="sidebar-nav"><li class="sidebar-nav-item sidebar-nav-toc hty-icon-button sidebar-nav-active" data-target="post-toc-wrap" title="文章目录"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-list-ordered"></use></svg></li><li class="sidebar-nav-item sidebar-nav-overview hty-icon-button" data-target="site-overview-wrap" title="站点概览"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-passport-line"></use></svg></li></ul><div class="sidebar-panel" id="site-overview-wrap"><div class="site-info mickey-mouse"><a class="site-author-avatar" href="/about/" title="oliver"><img width="96" loading="lazy" src="/yun.png" alt="oliver"><span class="site-author-status" title="你的朋友圈, 其实不用设置三天可见, 因为我一天也不想见。">😊</span></a><div class="site-author-name"><a href="/about/">oliver</a></div><span class="site-name">时光小站</span><sub class="site-subtitle">时光假寐</sub><div class="site-desciption">爱情可以晚点到, 但外卖不行</div></div><nav class="site-state"><a class="site-state-item hty-icon-button icon-home" href="/" title="首页"><span class="site-state-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-home-4-line"></use></svg></span></a><div class="site-state-item"><a href="/archives/" title="归档"><span class="site-state-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-archive-line"></use></svg></span><span class="site-state-item-count">4</span></a></div><div class="site-state-item"><a href="/categories/" title="分类"><span class="site-state-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-folder-2-line"></use></svg></span><span class="site-state-item-count">2</span></a></div><div class="site-state-item"><a href="/tags/" title="标签"><span class="site-state-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-price-tag-3-line"></use></svg></span><span class="site-state-item-count">4</span></a></div><a class="site-state-item hty-icon-button" target="_blank" rel="noopener" href="https://www.silencetime.com" title="静谧时光"><span class="site-state-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-settings-line"></use></svg></span></a></nav><hr style="margin-bottom:0.5rem"><div class="links-of-author"><a class="links-of-author-item hty-icon-button" rel="noopener" href="https://github.com/oyzbmmmm" title="GitHub" target="_blank" style="color:#6e5494"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-github-line"></use></svg></a><a class="links-of-author-item hty-icon-button" rel="noopener" href="https://music.163.com/#/user/home?id=102903983" title="网易云音乐" target="_blank" style="color:#C20C0C"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-netease-cloud-music-line"></use></svg></a><a class="links-of-author-item hty-icon-button" rel="noopener" href="mailto:oliver@silencetime.com" title="E-Mail" target="_blank" style="color:#8E71C1"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-mail-line"></use></svg></a></div><hr style="margin:0.5rem 1rem"><div class="links"><a class="links-item hty-icon-button" href="/links/" title="我的小伙伴们" style="color:dodgerblue"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-genderless-line"></use></svg></a><a class="links-item hty-icon-button" href="/about/" title="关于我" style="color:dodgerblue"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-user-line"></use></svg></a></div><br><a class="links-item hty-icon-button" id="toggle-mode-btn" href="javascript:;" title="Mode" style="color: #f1cb64"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-contrast-2-line"></use></svg></a></div><div class="sidebar-panel sidebar-panel-active" id="post-toc-wrap"><div class="post-toc"><div class="post-toc-content"><ol class="toc"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E9%9C%80%E8%A6%81%E7%94%A8%E5%88%B0%E7%9A%84%E7%8E%AF%E5%A2%83"><span class="toc-number">1.</span> <span class="toc-text">需要用到的环境</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%8E%B7%E5%8F%96%E9%92%89%E9%92%89%E6%9C%BA%E5%99%A8%E4%BA%BA%E5%9C%B0%E5%9D%80"><span class="toc-number">2.</span> <span class="toc-text">获取钉钉机器人地址</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%9C%8D%E5%8A%A1%E7%AB%AF%E9%83%A8%E7%BD%B2"><span class="toc-number">3.</span> <span class="toc-text">服务端部署</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#%E5%AE%89%E8%A3%85%E4%BE%9D%E8%B5%96"><span class="toc-number">3.1.</span> <span class="toc-text">安装依赖</span></a><ol class="toc-child"><li class="toc-item toc-level-6"><a class="toc-link" href="#%E5%AE%89%E8%A3%85yarn"><span class="toc-number">3.1.1.</span> <span class="toc-text">安装yarn</span></a></li><li class="toc-item toc-level-6"><a class="toc-link" href="#%E5%AE%89%E8%A3%85%E5%AE%9A%E6%97%B6%E6%A8%A1%E5%9D%97"><span class="toc-number">3.1.2.</span> <span class="toc-text">安装定时模块</span></a></li><li class="toc-item toc-level-6"><a class="toc-link" href="#%E5%AE%89%E8%A3%85%E5%8A%A0%E5%AF%86"><span class="toc-number">3.1.3.</span> <span class="toc-text">安装加密</span></a></li><li class="toc-item toc-level-6"><a class="toc-link" href="#%E5%AE%89%E8%A3%85node-fetch-%E7%94%A8%E4%BA%8E%E8%8E%B7%E5%8F%96%E5%A4%A9%E6%B0%94%E9%A2%84%E6%8A%A5"><span class="toc-number">3.1.4.</span> <span class="toc-text">安装node-fetch &#x2F;&#x2F; 用于获取天气预报</span></a></li></ol></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%8A%A0%E5%85%A5%E5%8A%9F%E8%83%BD"><span class="toc-number">4.</span> <span class="toc-text">加入功能</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#%E7%99%BE%E5%BA%A6%E5%A4%A9%E6%B0%94%E8%BF%94%E5%9B%9Ejson%E7%A4%BA%E4%BE%8B%E4%BB%A3%E7%A0%81"><span class="toc-number">4.1.</span> <span class="toc-text">百度天气返回json示例代码</span></a></li></ol></li></ol></div></div></div></aside><main class="sidebar-translate" id="content"><div id="post"><article class="hty-card post-block" itemscope itemtype="https://schema.org/Article" style="--smc-primary:#0078E7;"><link itemprop="mainEntityOfPage" href="https://oyzbmmmm.github.io/2022/02/21/ding-ding-drink-boot/"><span hidden itemprop="author" itemscope itemtype="https://schema.org/Person"><meta itemprop="name" content="oliver"><meta itemprop="description"></span><span hidden itemprop="publisher" itemscope itemtype="https://schema.org/Organization"><meta itemprop="name" content="时光小站"></span><header class="post-header"><h1 class="post-title" itemprop="name headline">创建一个可以定时提醒喝水的钉钉机器人</h1><div class="post-meta"><div class="post-time" style="display:block"><span class="post-meta-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-calendar-line"></use></svg></span> <time title="创建时间：2022-02-21 16:42:32" itemprop="dateCreated datePublished" datetime="2022-02-21T16:42:32+08:00">2022-02-21</time><span class="post-meta-divider">-</span><span class="post-meta-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-calendar-2-line"></use></svg></span> <time title="修改时间：2022-02-22 12:05:02" itemprop="dateModified" datetime="2022-02-22T12:05:02+08:00">2022-02-22</time></div><span class="post-count"><span class="post-symbolcount"><span class="post-meta-item-icon" title="本文字数"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-file-word-line"></use></svg></span> <span title="本文字数">2.1k</span><span class="post-meta-divider">-</span><span class="post-meta-item-icon" title="阅读时长"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-timer-line"></use></svg></span> <span title="阅读时长">10m</span></span></span><div class="post-classify"><span class="post-category"> <span class="post-meta-item-icon" style="margin-right:3px;"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-folder-line"></use></svg></span><span itemprop="about" itemscope itemtype="https://schema.org/Thing"><a class="category-item" href="/categories/%E5%B7%A5%E5%85%B7/" style="--text-color:dimgray" itemprop="url" rel="index"><span itemprop="text">工具</span></a></span></span><span class="post-tag"><span class="post-meta-divider">-</span><a class="tag-item" href="/tags/%E6%9C%BA%E5%99%A8%E4%BA%BA/" style="--text-color:var(--hty-text-color)"><span class="post-meta-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-price-tag-3-line"></use></svg></span><span class="tag-name">机器人</span></a></span></div><div class="post-author"><div class="author-avatar"><img src="https://www.gravatar.com/avatar/96fedbbbfb8c928febebd13f16496521?s=20&amp;d=https%3A%2F%2Fcdn.jsdelivr.net%2Fgh%2FYunYouJun%2Fcdn%2Fimg%2Favatar%2Fnone.jpg"></div><span class="author-name">oliver</span></div></div></header><section class="post-body" itemprop="articleBody"><div class="post-content markdown-body"><h4 id="需要用到的环境"><a href="#需要用到的环境" class="headerlink" title="需要用到的环境"></a>需要用到的环境</h4><blockquote>
+<p>能运行电脑版钉钉的Windows或者Mac用于获取机器人地址<br>能长期稳定运行node.js环境的电脑或者服务器(需要网络连接)，可以是你自己的电脑，服务器，软路由，群晖，你们公司闲置的电脑或者docker一个node<br><em><strong>【可选】</strong></em>，如果需要天气预报，需要自行申请百度开发者api密钥，<a target="_blank" rel="noopener" href="https://lbsyun.baidu.com/index.php?title=webapi/weather">百度天气API开发文档</a>, 以及<a target="_blank" rel="noopener" href="https://lbsyun.baidu.com/apiconsole/key#/home">申请密钥</a></p>
+</blockquote>
+<span id="more"></span>
+
+<h4 id="获取钉钉机器人地址"><a href="#获取钉钉机器人地址" class="headerlink" title="获取钉钉机器人地址"></a>获取钉钉机器人地址</h4><ul>
+<li>下载电脑版钉钉，<a target="_blank" rel="noopener" href="https://page.dingtalk.com/wow/z/dingtalk/default/dddownload-index">下载地址</a></li>
+<li>新建一个群，加入你想通知的人，如果你想只发送给自己，踢掉其他人即可。</li>
+<li>群设置 =&gt; 群智能助手 =&gt; 添加自定义机器人(webhook) =&gt; 安全设置勾选加签</li>
+<li>最后复制好webhook地址和加签密钥</li>
+</ul>
+<h4 id="服务端部署"><a href="#服务端部署" class="headerlink" title="服务端部署"></a>服务端部署</h4><ul>
+<li>在你的服务器(或电脑)上安装好node.js环境，<a target="_blank" rel="noopener" href="https://nodejs.org/zh-cn/">官方下载</a>，Linux和mac请自行查阅安装教程安装，Linux推荐使用docker安装</li>
+<li>检查安装，windows下打开Node.js command prompt程序，输入<code>node -v</code>,出现版本号即为正常，检测PATH环境变量是否配置了Node.js，点击开始=&gt;运行=&gt;输入<code>cmd</code> =&gt; 输入命令<code>path</code>，显示中有node.js即为正常。Linux同理。</li>
+<li>在你喜欢的位置新建一个项目文件夹，命名随意，打开文件夹，新建一个index.js</li>
+<li><h5 id="安装依赖"><a href="#安装依赖" class="headerlink" title="安装依赖"></a>安装依赖</h5><h6 id="安装yarn"><a href="#安装yarn" class="headerlink" title="安装yarn"></a>安装yarn</h6><pre class="language-shell" data-language="shell"><code class="language-shell">npm i -g yarn</code></pre>
+<h6 id="安装定时模块"><a href="#安装定时模块" class="headerlink" title="安装定时模块"></a>安装定时模块</h6><pre class="language-shell" data-language="shell"><code class="language-shell">yarn add node-schedule</code></pre>
+<h6 id="安装加密"><a href="#安装加密" class="headerlink" title="安装加密"></a>安装加密</h6><pre class="language-shell" data-language="shell"><code class="language-shell">yarn add crypto</code></pre>
+<h6 id="安装node-fetch-用于获取天气预报"><a href="#安装node-fetch-用于获取天气预报" class="headerlink" title="安装node-fetch // 用于获取天气预报"></a>安装node-fetch // 用于获取天气预报</h6><pre class="language-shell" data-language="shell"><code class="language-shell">yarn add node-fetch</code></pre>
+编辑package.json，增加<code>&quot;type&quot;: &quot;module&quot;</code>，(放在json第一级)</li>
+</ul>
+<h4 id="加入功能"><a href="#加入功能" class="headerlink" title="加入功能"></a>加入功能</h4><pre class="language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">import</span> schedule <span class="token keyword">from</span> <span class="token string">'node-schedule'</span>
+<span class="token keyword">import</span> fetch <span class="token keyword">from</span> <span class="token string">'node-fetch'</span>
+<span class="token keyword">import</span> crypto <span class="token keyword">from</span> <span class="token string">'crypto'</span><span class="token punctuation">;</span>
+
+<span class="token comment">// 第一个参数为[秒 分 时 ]</span>
+<span class="token comment">// * * * * * *</span>
+<span class="token comment">// ┬ ┬ ┬ ┬ ┬ ┬</span>
+<span class="token comment">// │ │ │ │ │ │</span>
+<span class="token comment">// │ │ │ │ │ └ day of week (0 - 7) (0 or 7 is Sun)</span>
+<span class="token comment">// │ │ │ │ └───── month (1 - 12)</span>
+<span class="token comment">// │ │ │ └────────── day of month (1 - 31)</span>
+<span class="token comment">// │ │ └─────────────── hour (0 - 23)</span>
+<span class="token comment">// │ └──────────────────── minute (0 - 59)</span>
+<span class="token comment">// └───────────────────────── second (0 - 59, OPTIONAL)</span>
+<span class="token comment">// 6个占位符从左到右分别代表：秒、分、时、日、月、周几</span>
+<span class="token comment">// '*'表示通配符，匹配任意，当秒是'*'时，表示任意秒数都触发，其它类推</span>
+<span class="token comment">// 下面可以看看以下传入参数分别代表的意思</span>
+<span class="token comment">// 每分钟的第30秒触发： '30 * * * * *'</span>
+<span class="token comment">// 每小时的1分30秒触发 ：'30 1 * * * *'</span>
+<span class="token comment">// 每天的凌晨1点1分30秒触发 ：'30 1 1 * * *'</span>
+<span class="token comment">// 每月的1日1点1分30秒触发 ：'30 1 1 1 * *'</span>
+<span class="token comment">// 2016年的1月1日1点1分30秒触发 ：'30 1 1 1 2016 *'</span>
+<span class="token comment">// 每周1的1点1分30秒触发 ：'30 1 1 * * 1'</span>
+<span class="token keyword">const</span> job <span class="token operator">=</span> schedule<span class="token punctuation">.</span><span class="token function">scheduleJob</span><span class="token punctuation">(</span><span class="token string">'* 00 * * * *'</span><span class="token punctuation">,</span> <span class="token keyword">async</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token punctuation">&#123;</span>
+  <span class="token comment">//机器人地址</span>
+  <span class="token keyword">let</span> url <span class="token operator">=</span> <span class="token template-string"><span class="token template-punctuation string">`</span><span class="token string">你的钉钉webhook地址</span><span class="token template-punctuation string">`</span></span>
+  <span class="token comment">//签名验证</span>
+  <span class="token keyword">let</span> secret <span class="token operator">=</span> <span class="token string">'加签密钥'</span>
+  <span class="token keyword">let</span> time <span class="token operator">=</span> Date<span class="token punctuation">.</span><span class="token function">now</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">//当前时间戳</span>
+  <span class="token keyword">let</span> stringToSign <span class="token operator">=</span> time <span class="token operator">+</span> <span class="token string">"\n"</span> <span class="token operator">+</span> secret<span class="token punctuation">;</span> 
+  <span class="token keyword">let</span> base <span class="token operator">=</span> crypto<span class="token punctuation">.</span><span class="token function">createHmac</span><span class="token punctuation">(</span><span class="token string">'sha256'</span><span class="token punctuation">,</span> secret<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">update</span><span class="token punctuation">(</span>stringToSign<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">digest</span><span class="token punctuation">(</span><span class="token string">'base64'</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">//encode</span>
+  <span class="token keyword">let</span> sign <span class="token operator">=</span> <span class="token function">encodeURIComponent</span><span class="token punctuation">(</span>base<span class="token punctuation">)</span> <span class="token comment">//二次encode</span>
+  url <span class="token operator">=</span> url<span class="token operator">+</span><span class="token template-string"><span class="token template-punctuation string">`</span><span class="token string">&amp;timestamp=</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">$&#123;</span>time<span class="token interpolation-punctuation punctuation">&#125;</span></span><span class="token string">&amp;sign=</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">$&#123;</span>sign<span class="token interpolation-punctuation punctuation">&#125;</span></span><span class="token template-punctuation string">`</span></span><span class="token punctuation">;</span> <span class="token comment">//拼串得到最终的URL</span>
+  <span class="token keyword">let</span> location <span class="token operator">=</span> <span class="token string">'110100'</span> <span class="token comment">//设置城市编码查询 https://mapopen-website-wiki.cdn.bcebos.com/cityList/weather_district_id.csv，可以自行洗成json等</span>
+  <span class="token comment">// 下面时可选的天气预报服务</span>
+  <span class="token keyword">let</span> ak <span class="token operator">=</span> <span class="token string">'你的百度密钥'</span>
+  <span class="token keyword">let</span> url <span class="token operator">=</span> <span class="token template-string"><span class="token template-punctuation string">`</span><span class="token string">https://api.map.baidu.com/weather/v1/?district_id=</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">$&#123;</span>district<span class="token interpolation-punctuation punctuation">&#125;</span></span><span class="token string">&amp;data_type=all&amp;ak=</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">$&#123;</span>ak<span class="token interpolation-punctuation punctuation">&#125;</span></span><span class="token string">  //GET请求</span><span class="token template-punctuation string">`</span></span>
+  <span class="token comment">// 获取天气</span>
+  <span class="token keyword">let</span> res <span class="token operator">=</span> <span class="token keyword">await</span> <span class="token function">fetch</span><span class="token punctuation">(</span>url<span class="token punctuation">)</span>
+  <span class="token keyword">let</span> data <span class="token operator">=</span> <span class="token keyword">await</span> res<span class="token punctuation">.</span><span class="token function">json</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+  <span class="token comment">// 根据钉钉文档构建json格式的数据, </span>
+  <span class="token keyword">let</span> body <span class="token operator">=</span> <span class="token punctuation">&#123;</span>
+    <span class="token string-property property">"msgtype"</span><span class="token operator">:</span> <span class="token string">"markdown"</span><span class="token punctuation">,</span>
+    <span class="token string-property property">"markdown"</span><span class="token operator">:</span> <span class="token punctuation">&#123;</span>
+        <span class="token string-property property">"title"</span><span class="token operator">:</span> <span class="token template-string"><span class="token template-punctuation string">`</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">$&#123;</span>data<span class="token punctuation">.</span>result<span class="token punctuation">.</span>location<span class="token punctuation">.</span>city<span class="token interpolation-punctuation punctuation">&#125;</span></span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">$&#123;</span>data<span class="token punctuation">.</span>result<span class="token punctuation">.</span>location<span class="token punctuation">.</span>name<span class="token interpolation-punctuation punctuation">&#125;</span></span><span class="token template-punctuation string">`</span></span><span class="token punctuation">,</span>
+        <span class="token string-property property">"text"</span><span class="token operator">:</span> <span class="token template-string"><span class="token template-punctuation string">`</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">$&#123;</span>data<span class="token punctuation">.</span>result<span class="token punctuation">.</span>now<span class="token punctuation">.</span>text<span class="token interpolation-punctuation punctuation">&#125;</span></span><span class="token string">
+        现在是</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">$&#123;</span><span class="token keyword">new</span> <span class="token class-name">Date</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">toLocaleTimeString</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token interpolation-punctuation punctuation">&#125;</span></span><span class="token string">
+        起来活动，喝杯水
+        </span><span class="token template-punctuation string">`</span></span>
+    <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+  <span class="token punctuation">&#125;</span>
+  <span class="token keyword">let</span> response <span class="token operator">=</span> <span class="token keyword">await</span> <span class="token function">fetch</span><span class="token punctuation">(</span>url<span class="token punctuation">,</span> <span class="token punctuation">&#123;</span>
+    <span class="token literal-property property">method</span><span class="token operator">:</span> <span class="token string">'post'</span><span class="token punctuation">,</span>
+    <span class="token literal-property property">body</span><span class="token operator">:</span> <span class="token constant">JSON</span><span class="token punctuation">.</span><span class="token function">stringify</span><span class="token punctuation">(</span>body<span class="token punctuation">)</span><span class="token punctuation">,</span>
+    <span class="token literal-property property">headers</span><span class="token operator">:</span> <span class="token punctuation">&#123;</span><span class="token string-property property">'Content-Type'</span><span class="token operator">:</span> <span class="token string">'application/json'</span><span class="token punctuation">&#125;</span>
+  <span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">let</span> msg <span class="token operator">=</span> <span class="token keyword">await</span> response<span class="token punctuation">.</span><span class="token function">json</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span>msg<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+</code></pre>
+<h5 id="百度天气返回json示例代码"><a href="#百度天气返回json示例代码" class="headerlink" title="百度天气返回json示例代码"></a>百度天气返回json示例代码</h5><p>请求类型为all的响应示例（部分字段需开通高级权限，具体请参考文档说明）</p>
+<pre class="language-json" data-language="json"><code class="language-json"><span class="token punctuation">&#123;</span>
+    <span class="token property">"status"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+    <span class="token property">"result"</span><span class="token operator">:</span><span class="token punctuation">&#123;</span>
+        <span class="token property">"location"</span><span class="token operator">:</span><span class="token punctuation">&#123;</span>
+            <span class="token property">"country"</span><span class="token operator">:</span><span class="token string">"中国"</span><span class="token punctuation">,</span>
+            <span class="token property">"province"</span><span class="token operator">:</span><span class="token string">"北京市"</span><span class="token punctuation">,</span>
+            <span class="token property">"city"</span><span class="token operator">:</span><span class="token string">"北京市"</span><span class="token punctuation">,</span>
+            <span class="token property">"name"</span><span class="token operator">:</span><span class="token string">"东城"</span><span class="token punctuation">,</span>
+            <span class="token property">"id"</span><span class="token operator">:</span><span class="token string">"110101"</span>
+        <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+        <span class="token property">"now"</span><span class="token operator">:</span><span class="token punctuation">&#123;</span>
+            <span class="token property">"temp"</span><span class="token operator">:</span><span class="token number">4</span><span class="token punctuation">,</span>
+            <span class="token property">"feels_like"</span><span class="token operator">:</span><span class="token number">1</span><span class="token punctuation">,</span>
+            <span class="token property">"rh"</span><span class="token operator">:</span><span class="token number">73</span><span class="token punctuation">,</span>
+            <span class="token property">"wind_class"</span><span class="token operator">:</span><span class="token string">"2级"</span><span class="token punctuation">,</span>
+            <span class="token property">"wind_dir"</span><span class="token operator">:</span><span class="token string">"东风"</span><span class="token punctuation">,</span>
+            <span class="token property">"text"</span><span class="token operator">:</span><span class="token string">"多云"</span><span class="token punctuation">,</span>
+            <span class="token property">"prec_1h"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+            <span class="token property">"clouds"</span><span class="token operator">:</span><span class="token number">999999</span><span class="token punctuation">,</span>
+            <span class="token property">"vis"</span><span class="token operator">:</span><span class="token number">3471</span><span class="token punctuation">,</span>
+            <span class="token property">"aqi"</span><span class="token operator">:</span><span class="token number">140</span><span class="token punctuation">,</span>
+            <span class="token property">"pm25"</span><span class="token operator">:</span><span class="token number">107</span><span class="token punctuation">,</span>
+            <span class="token property">"pm10"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+            <span class="token property">"no2"</span><span class="token operator">:</span><span class="token number">23</span><span class="token punctuation">,</span>
+            <span class="token property">"so2"</span><span class="token operator">:</span><span class="token number">22</span><span class="token punctuation">,</span>
+            <span class="token property">"o3"</span><span class="token operator">:</span><span class="token number">70</span><span class="token punctuation">,</span>
+            <span class="token property">"co"</span><span class="token operator">:</span><span class="token number">1.7</span><span class="token punctuation">,</span>
+            <span class="token property">"uptime"</span><span class="token operator">:</span><span class="token string">"20200220143500"</span>
+        <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+        <span class="token property">"indexes"</span><span class="token operator">:</span><span class="token punctuation">[</span>
+            <span class="token punctuation">&#123;</span>
+                <span class="token property">"name"</span><span class="token operator">:</span><span class="token string">"晨练指数"</span><span class="token punctuation">,</span>
+                <span class="token property">"brief"</span><span class="token operator">:</span><span class="token string">"较适宜"</span><span class="token punctuation">,</span>
+                <span class="token property">"detail"</span><span class="token operator">:</span><span class="token string">"天气阴沉，请避免在林中晨练。"</span>
+            <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+            <span class="token punctuation">&#123;</span>
+                <span class="token property">"name"</span><span class="token operator">:</span><span class="token string">"洗车指数"</span><span class="token punctuation">,</span>
+                <span class="token property">"brief"</span><span class="token operator">:</span><span class="token string">"适宜"</span><span class="token punctuation">,</span>
+                <span class="token property">"detail"</span><span class="token operator">:</span><span class="token string">"天气较好，适合擦洗汽车。"</span>
+            <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+            <span class="token punctuation">&#123;</span>
+                <span class="token property">"name"</span><span class="token operator">:</span><span class="token string">"感冒指数"</span><span class="token punctuation">,</span>
+                <span class="token property">"brief"</span><span class="token operator">:</span><span class="token string">"易发"</span><span class="token punctuation">,</span>
+                <span class="token property">"detail"</span><span class="token operator">:</span><span class="token string">"天凉，昼夜温差大，易感冒"</span>
+            <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+            <span class="token punctuation">&#123;</span>
+                <span class="token property">"name"</span><span class="token operator">:</span><span class="token string">"紫外线指数"</span><span class="token punctuation">,</span>
+                <span class="token property">"brief"</span><span class="token operator">:</span><span class="token string">"最弱"</span><span class="token punctuation">,</span>
+                <span class="token property">"detail"</span><span class="token operator">:</span><span class="token string">"辐射弱，涂擦SPF8-12防晒护肤品。"</span>
+            <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+            <span class="token punctuation">&#123;</span>
+                <span class="token property">"name"</span><span class="token operator">:</span><span class="token string">"穿衣指数"</span><span class="token punctuation">,</span>
+                <span class="token property">"brief"</span><span class="token operator">:</span><span class="token string">"较冷"</span><span class="token punctuation">,</span>
+                <span class="token property">"detail"</span><span class="token operator">:</span><span class="token string">"建议着厚外套加毛衣等服装。"</span>
+            <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+            <span class="token punctuation">&#123;</span>
+                <span class="token property">"name"</span><span class="token operator">:</span><span class="token string">"运动指数"</span><span class="token punctuation">,</span>
+                <span class="token property">"brief"</span><span class="token operator">:</span><span class="token string">"较适宜"</span><span class="token punctuation">,</span>
+                <span class="token property">"detail"</span><span class="token operator">:</span><span class="token string">"气温较低，在户外运动请注意增减衣物。"</span>
+            <span class="token punctuation">&#125;</span>
+        <span class="token punctuation">]</span><span class="token punctuation">,</span>
+        <span class="token property">"alerts"</span><span class="token operator">:</span><span class="token punctuation">[</span>
+            <span class="token punctuation">&#123;</span>
+                <span class="token property">"type"</span><span class="token operator">:</span> <span class="token string">"道路冰雪"</span><span class="token punctuation">,</span>
+                <span class="token property">"level"</span><span class="token operator">:</span> <span class="token string">"蓝色预警"</span><span class="token punctuation">,</span>
+                <span class="token property">"title"</span><span class="token operator">:</span> <span class="token string">"市气象局发布道路冰雪蓝色预警[IV级/一般]"</span><span class="token punctuation">,</span> 
+                <span class="token property">"desc"</span><span class="token operator">:</span> "市气象局发布道路冰雪蓝色预警信号<span class="token operator">:</span>受降雪天气影响，
+                        预计未来 <span class="token number">24</span> 小时我市将出现对交通有影响的道路结冰或积雪， 
+                        请有关部门及广大群众做好防范工作。"
+            <span class="token punctuation">&#125;</span>
+
+        <span class="token punctuation">]</span><span class="token punctuation">,</span>
+        <span class="token property">"forecasts"</span><span class="token operator">:</span><span class="token punctuation">[</span>
+            <span class="token punctuation">&#123;</span>
+                <span class="token property">"date"</span><span class="token operator">:</span><span class="token string">"2020-02-20"</span><span class="token punctuation">,</span>
+                <span class="token property">"week"</span><span class="token operator">:</span><span class="token string">"星期四"</span><span class="token punctuation">,</span>
+                <span class="token property">"high"</span><span class="token operator">:</span><span class="token number">7</span><span class="token punctuation">,</span>
+                <span class="token property">"low"</span><span class="token operator">:</span><span class="token number">-2</span><span class="token punctuation">,</span>
+                <span class="token property">"wc_day"</span><span class="token operator">:</span><span class="token string">"&lt;3级"</span><span class="token punctuation">,</span>
+                <span class="token property">"wc_night"</span><span class="token operator">:</span><span class="token string">"&lt;3级"</span><span class="token punctuation">,</span>
+                <span class="token property">"wd_day"</span><span class="token operator">:</span><span class="token string">"东南风"</span><span class="token punctuation">,</span>
+                <span class="token property">"wd_night"</span><span class="token operator">:</span><span class="token string">"北风"</span><span class="token punctuation">,</span>
+                <span class="token property">"text_day"</span><span class="token operator">:</span><span class="token string">"多云"</span><span class="token punctuation">,</span>
+                <span class="token property">"text_night"</span><span class="token operator">:</span><span class="token string">"阴"</span><span class="token punctuation">,</span>
+                <span class="token property">"aqi"</span><span class="token operator">:</span><span class="token number">93</span>
+            <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+            <span class="token punctuation">&#123;</span>
+                <span class="token property">"date"</span><span class="token operator">:</span><span class="token string">"2020-02-21"</span><span class="token punctuation">,</span>
+                <span class="token property">"week"</span><span class="token operator">:</span><span class="token string">"星期五"</span><span class="token punctuation">,</span>
+                <span class="token property">"high"</span><span class="token operator">:</span><span class="token number">11</span><span class="token punctuation">,</span>
+                <span class="token property">"low"</span><span class="token operator">:</span><span class="token number">1</span><span class="token punctuation">,</span>
+                <span class="token property">"wc_day"</span><span class="token operator">:</span><span class="token string">"4~5级"</span><span class="token punctuation">,</span>
+                <span class="token property">"wc_night"</span><span class="token operator">:</span><span class="token string">"&lt;3级"</span><span class="token punctuation">,</span>
+                <span class="token property">"wd_day"</span><span class="token operator">:</span><span class="token string">"西北风"</span><span class="token punctuation">,</span>
+                <span class="token property">"wd_night"</span><span class="token operator">:</span><span class="token string">"西北风"</span><span class="token punctuation">,</span>
+                <span class="token property">"text_day"</span><span class="token operator">:</span><span class="token string">"多云"</span><span class="token punctuation">,</span>
+                <span class="token property">"text_night"</span><span class="token operator">:</span><span class="token string">"晴"</span><span class="token punctuation">,</span>
+                <span class="token property">"aqi"</span><span class="token operator">:</span><span class="token number">44</span>
+            <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+            <span class="token punctuation">&#123;</span>
+                <span class="token property">"date"</span><span class="token operator">:</span><span class="token string">"2020-02-22"</span><span class="token punctuation">,</span>
+                <span class="token property">"week"</span><span class="token operator">:</span><span class="token string">"星期六"</span><span class="token punctuation">,</span>
+                <span class="token property">"high"</span><span class="token operator">:</span><span class="token number">10</span><span class="token punctuation">,</span>
+                <span class="token property">"low"</span><span class="token operator">:</span><span class="token number">-2</span><span class="token punctuation">,</span>
+                <span class="token property">"wc_day"</span><span class="token operator">:</span><span class="token string">"&lt;3级"</span><span class="token punctuation">,</span>
+                <span class="token property">"wc_night"</span><span class="token operator">:</span><span class="token string">"&lt;3级"</span><span class="token punctuation">,</span>
+                <span class="token property">"wd_day"</span><span class="token operator">:</span><span class="token string">"西风"</span><span class="token punctuation">,</span>
+                <span class="token property">"wd_night"</span><span class="token operator">:</span><span class="token string">"南风"</span><span class="token punctuation">,</span>
+                <span class="token property">"text_day"</span><span class="token operator">:</span><span class="token string">"晴"</span><span class="token punctuation">,</span>
+                <span class="token property">"text_night"</span><span class="token operator">:</span><span class="token string">"晴"</span><span class="token punctuation">,</span>
+                <span class="token property">"aqi"</span><span class="token operator">:</span><span class="token number">39</span>
+            <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+            <span class="token punctuation">&#123;</span>
+                <span class="token property">"date"</span><span class="token operator">:</span><span class="token string">"2020-02-23"</span><span class="token punctuation">,</span>
+                <span class="token property">"week"</span><span class="token operator">:</span><span class="token string">"星期日"</span><span class="token punctuation">,</span>
+                <span class="token property">"high"</span><span class="token operator">:</span><span class="token number">11</span><span class="token punctuation">,</span>
+                <span class="token property">"low"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token property">"wc_day"</span><span class="token operator">:</span><span class="token string">"&lt;3级"</span><span class="token punctuation">,</span>
+                <span class="token property">"wc_night"</span><span class="token operator">:</span><span class="token string">"&lt;3级"</span><span class="token punctuation">,</span>
+                <span class="token property">"wd_day"</span><span class="token operator">:</span><span class="token string">"北风"</span><span class="token punctuation">,</span>
+                <span class="token property">"wd_night"</span><span class="token operator">:</span><span class="token string">"北风"</span><span class="token punctuation">,</span>
+                <span class="token property">"text_day"</span><span class="token operator">:</span><span class="token string">"晴"</span><span class="token punctuation">,</span>
+                <span class="token property">"text_night"</span><span class="token operator">:</span><span class="token string">"晴"</span><span class="token punctuation">,</span>
+                <span class="token property">"aqi"</span><span class="token operator">:</span><span class="token number">65</span>
+            <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+            <span class="token punctuation">&#123;</span>
+                <span class="token property">"date"</span><span class="token operator">:</span><span class="token string">"2020-02-24"</span><span class="token punctuation">,</span>
+                <span class="token property">"week"</span><span class="token operator">:</span><span class="token string">"星期一"</span><span class="token punctuation">,</span>
+                <span class="token property">"high"</span><span class="token operator">:</span><span class="token number">9</span><span class="token punctuation">,</span>
+                <span class="token property">"low"</span><span class="token operator">:</span><span class="token number">-1</span><span class="token punctuation">,</span>
+                <span class="token property">"wc_day"</span><span class="token operator">:</span><span class="token string">"&lt;3级"</span><span class="token punctuation">,</span>
+                <span class="token property">"wc_night"</span><span class="token operator">:</span><span class="token string">"&lt;3级"</span><span class="token punctuation">,</span>
+                <span class="token property">"wd_day"</span><span class="token operator">:</span><span class="token string">"东风"</span><span class="token punctuation">,</span>
+                <span class="token property">"wd_night"</span><span class="token operator">:</span><span class="token string">"东北风"</span><span class="token punctuation">,</span>
+                <span class="token property">"text_day"</span><span class="token operator">:</span><span class="token string">"多云"</span><span class="token punctuation">,</span>
+                <span class="token property">"text_night"</span><span class="token operator">:</span><span class="token string">"多云"</span><span class="token punctuation">,</span>
+                <span class="token property">"aqi"</span><span class="token operator">:</span><span class="token number">38</span>
+            <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+            <span class="token punctuation">&#123;</span>
+                <span class="token property">"date"</span><span class="token operator">:</span><span class="token string">"2020-02-25"</span><span class="token punctuation">,</span>
+                <span class="token property">"week"</span><span class="token operator">:</span><span class="token string">"星期二"</span><span class="token punctuation">,</span>
+                <span class="token property">"high"</span><span class="token operator">:</span><span class="token number">9</span><span class="token punctuation">,</span>
+                <span class="token property">"low"</span><span class="token operator">:</span><span class="token number">-3</span><span class="token punctuation">,</span>
+                <span class="token property">"wc_day"</span><span class="token operator">:</span><span class="token string">"&lt;3级"</span><span class="token punctuation">,</span>
+                <span class="token property">"wc_night"</span><span class="token operator">:</span><span class="token string">"&lt;3级"</span><span class="token punctuation">,</span>
+                <span class="token property">"wd_day"</span><span class="token operator">:</span><span class="token string">"东南风"</span><span class="token punctuation">,</span>
+                <span class="token property">"wd_night"</span><span class="token operator">:</span><span class="token string">"西南风"</span><span class="token punctuation">,</span>
+                <span class="token property">"text_day"</span><span class="token operator">:</span><span class="token string">"晴"</span><span class="token punctuation">,</span>
+                <span class="token property">"text_night"</span><span class="token operator">:</span><span class="token string">"晴"</span><span class="token punctuation">,</span>
+                <span class="token property">"aqi"</span><span class="token operator">:</span><span class="token number">27</span>
+            <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+            <span class="token punctuation">&#123;</span>
+                <span class="token property">"date"</span><span class="token operator">:</span><span class="token string">"2020-02-26"</span><span class="token punctuation">,</span>
+                <span class="token property">"week"</span><span class="token operator">:</span><span class="token string">"星期三"</span><span class="token punctuation">,</span>
+                <span class="token property">"high"</span><span class="token operator">:</span><span class="token number">9</span><span class="token punctuation">,</span>
+                <span class="token property">"low"</span><span class="token operator">:</span><span class="token number">-3</span><span class="token punctuation">,</span>
+                <span class="token property">"wc_day"</span><span class="token operator">:</span><span class="token string">"&lt;3级"</span><span class="token punctuation">,</span>
+                <span class="token property">"wc_night"</span><span class="token operator">:</span><span class="token string">"&lt;3级"</span><span class="token punctuation">,</span>
+                <span class="token property">"wd_day"</span><span class="token operator">:</span><span class="token string">"西南风"</span><span class="token punctuation">,</span>
+                <span class="token property">"wd_night"</span><span class="token operator">:</span><span class="token string">"西南风"</span><span class="token punctuation">,</span>
+                <span class="token property">"text_day"</span><span class="token operator">:</span><span class="token string">"晴"</span><span class="token punctuation">,</span>
+                <span class="token property">"text_night"</span><span class="token operator">:</span><span class="token string">"晴"</span><span class="token punctuation">,</span>
+                <span class="token property">"aqi"</span><span class="token operator">:</span><span class="token number">26</span>
+            <span class="token punctuation">&#125;</span>
+        <span class="token punctuation">]</span><span class="token punctuation">,</span>
+        <span class="token property">"forecast_hours"</span><span class="token operator">:</span><span class="token punctuation">[</span>
+            <span class="token punctuation">&#123;</span>
+                <span class="token property">"text"</span><span class="token operator">:</span><span class="token string">"晴"</span><span class="token punctuation">,</span>
+                <span class="token property">"temp_fc"</span><span class="token operator">:</span><span class="token number">14</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_class"</span><span class="token operator">:</span><span class="token string">"3~4级"</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_dir"</span><span class="token operator">:</span><span class="token string">"西南风"</span><span class="token punctuation">,</span>
+                <span class="token property">"rh"</span><span class="token operator">:</span><span class="token number">15</span><span class="token punctuation">,</span>
+                <span class="token property">"prec_1h"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token property">"clouds"</span><span class="token operator">:</span><span class="token number">10</span><span class="token punctuation">,</span>
+                <span class="token property">"data_time"</span><span class="token operator">:</span><span class="token string">"2020-04-01 16:00:00"</span>
+            <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+            <span class="token punctuation">&#123;</span>
+                <span class="token property">"text"</span><span class="token operator">:</span><span class="token string">"晴"</span><span class="token punctuation">,</span>
+                <span class="token property">"temp_fc"</span><span class="token operator">:</span><span class="token number">14</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_class"</span><span class="token operator">:</span><span class="token string">"3~4级"</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_dir"</span><span class="token operator">:</span><span class="token string">"西南风"</span><span class="token punctuation">,</span>
+                <span class="token property">"rh"</span><span class="token operator">:</span><span class="token number">13</span><span class="token punctuation">,</span>
+                <span class="token property">"prec_1h"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token property">"clouds"</span><span class="token operator">:</span><span class="token number">10</span><span class="token punctuation">,</span>
+                <span class="token property">"data_time"</span><span class="token operator">:</span><span class="token string">"2020-04-01 17:00:00"</span>
+            <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+            <span class="token punctuation">&#123;</span>
+                <span class="token property">"text"</span><span class="token operator">:</span><span class="token string">"晴"</span><span class="token punctuation">,</span>
+                <span class="token property">"temp_fc"</span><span class="token operator">:</span><span class="token number">13</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_class"</span><span class="token operator">:</span><span class="token string">"&lt;3级"</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_dir"</span><span class="token operator">:</span><span class="token string">"西南风"</span><span class="token punctuation">,</span>
+                <span class="token property">"rh"</span><span class="token operator">:</span><span class="token number">14</span><span class="token punctuation">,</span>
+                <span class="token property">"prec_1h"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token property">"clouds"</span><span class="token operator">:</span><span class="token number">10</span><span class="token punctuation">,</span>
+                <span class="token property">"data_time"</span><span class="token operator">:</span><span class="token string">"2020-04-01 18:00:00"</span>
+            <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+            <span class="token punctuation">&#123;</span>
+                <span class="token property">"text"</span><span class="token operator">:</span><span class="token string">"晴"</span><span class="token punctuation">,</span>
+                <span class="token property">"temp_fc"</span><span class="token operator">:</span><span class="token number">11</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_class"</span><span class="token operator">:</span><span class="token string">"&lt;3级"</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_dir"</span><span class="token operator">:</span><span class="token string">"西南风"</span><span class="token punctuation">,</span>
+                <span class="token property">"rh"</span><span class="token operator">:</span><span class="token number">15</span><span class="token punctuation">,</span>
+                <span class="token property">"prec_1h"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token property">"clouds"</span><span class="token operator">:</span><span class="token number">10</span><span class="token punctuation">,</span>
+                <span class="token property">"data_time"</span><span class="token operator">:</span><span class="token string">"2020-04-01 19:00:00"</span>
+            <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+            <span class="token punctuation">&#123;</span>
+                <span class="token property">"text"</span><span class="token operator">:</span><span class="token string">"晴"</span><span class="token punctuation">,</span>
+                <span class="token property">"temp_fc"</span><span class="token operator">:</span><span class="token number">10</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_class"</span><span class="token operator">:</span><span class="token string">"&lt;3级"</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_dir"</span><span class="token operator">:</span><span class="token string">"西南风"</span><span class="token punctuation">,</span>
+                <span class="token property">"rh"</span><span class="token operator">:</span><span class="token number">16</span><span class="token punctuation">,</span>
+                <span class="token property">"prec_1h"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token property">"clouds"</span><span class="token operator">:</span><span class="token number">10</span><span class="token punctuation">,</span>
+                <span class="token property">"data_time"</span><span class="token operator">:</span><span class="token string">"2020-04-01 20:00:00"</span>
+            <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+            <span class="token punctuation">&#123;</span>
+                <span class="token property">"text"</span><span class="token operator">:</span><span class="token string">"晴"</span><span class="token punctuation">,</span>
+                <span class="token property">"temp_fc"</span><span class="token operator">:</span><span class="token number">9</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_class"</span><span class="token operator">:</span><span class="token string">"&lt;3级"</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_dir"</span><span class="token operator">:</span><span class="token string">"西风"</span><span class="token punctuation">,</span>
+                <span class="token property">"rh"</span><span class="token operator">:</span><span class="token number">18</span><span class="token punctuation">,</span>
+                <span class="token property">"prec_1h"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token property">"clouds"</span><span class="token operator">:</span><span class="token number">6</span><span class="token punctuation">,</span>
+                <span class="token property">"data_time"</span><span class="token operator">:</span><span class="token string">"2020-04-01 21:00:00"</span>
+            <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+            <span class="token punctuation">&#123;</span>
+                <span class="token property">"text"</span><span class="token operator">:</span><span class="token string">"晴"</span><span class="token punctuation">,</span>
+                <span class="token property">"temp_fc"</span><span class="token operator">:</span><span class="token number">9</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_class"</span><span class="token operator">:</span><span class="token string">"&lt;3级"</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_dir"</span><span class="token operator">:</span><span class="token string">"西风"</span><span class="token punctuation">,</span>
+                <span class="token property">"rh"</span><span class="token operator">:</span><span class="token number">20</span><span class="token punctuation">,</span>
+                <span class="token property">"prec_1h"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token property">"clouds"</span><span class="token operator">:</span><span class="token number">3</span><span class="token punctuation">,</span>
+                <span class="token property">"data_time"</span><span class="token operator">:</span><span class="token string">"2020-04-01 22:00:00"</span>
+            <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+            <span class="token punctuation">&#123;</span>
+                <span class="token property">"text"</span><span class="token operator">:</span><span class="token string">"晴"</span><span class="token punctuation">,</span>
+                <span class="token property">"temp_fc"</span><span class="token operator">:</span><span class="token number">8</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_class"</span><span class="token operator">:</span><span class="token string">"&lt;3级"</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_dir"</span><span class="token operator">:</span><span class="token string">"西风"</span><span class="token punctuation">,</span>
+                <span class="token property">"rh"</span><span class="token operator">:</span><span class="token number">21</span><span class="token punctuation">,</span>
+                <span class="token property">"prec_1h"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token property">"clouds"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token property">"data_time"</span><span class="token operator">:</span><span class="token string">"2020-04-01 23:00:00"</span>
+            <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+            <span class="token punctuation">&#123;</span>
+                <span class="token property">"text"</span><span class="token operator">:</span><span class="token string">"晴"</span><span class="token punctuation">,</span>
+                <span class="token property">"temp_fc"</span><span class="token operator">:</span><span class="token number">7</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_class"</span><span class="token operator">:</span><span class="token string">"&lt;3级"</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_dir"</span><span class="token operator">:</span><span class="token string">"西北风"</span><span class="token punctuation">,</span>
+                <span class="token property">"rh"</span><span class="token operator">:</span><span class="token number">26</span><span class="token punctuation">,</span>
+                <span class="token property">"prec_1h"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token property">"clouds"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token property">"data_time"</span><span class="token operator">:</span><span class="token string">"2020-04-02 00:00:00"</span>
+            <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+            <span class="token punctuation">&#123;</span>
+                <span class="token property">"text"</span><span class="token operator">:</span><span class="token string">"晴"</span><span class="token punctuation">,</span>
+                <span class="token property">"temp_fc"</span><span class="token operator">:</span><span class="token number">6</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_class"</span><span class="token operator">:</span><span class="token string">"&lt;3级"</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_dir"</span><span class="token operator">:</span><span class="token string">"西北风"</span><span class="token punctuation">,</span>
+                <span class="token property">"rh"</span><span class="token operator">:</span><span class="token number">31</span><span class="token punctuation">,</span>
+                <span class="token property">"prec_1h"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token property">"clouds"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token property">"data_time"</span><span class="token operator">:</span><span class="token string">"2020-04-02 01:00:00"</span>
+            <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+            <span class="token punctuation">&#123;</span>
+                <span class="token property">"text"</span><span class="token operator">:</span><span class="token string">"晴"</span><span class="token punctuation">,</span>
+                <span class="token property">"temp_fc"</span><span class="token operator">:</span><span class="token number">6</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_class"</span><span class="token operator">:</span><span class="token string">"&lt;3级"</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_dir"</span><span class="token operator">:</span><span class="token string">"西北风"</span><span class="token punctuation">,</span>
+                <span class="token property">"rh"</span><span class="token operator">:</span><span class="token number">36</span><span class="token punctuation">,</span>
+                <span class="token property">"prec_1h"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token property">"clouds"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token property">"data_time"</span><span class="token operator">:</span><span class="token string">"2020-04-02 02:00:00"</span>
+            <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+            <span class="token punctuation">&#123;</span>
+                <span class="token property">"text"</span><span class="token operator">:</span><span class="token string">"晴"</span><span class="token punctuation">,</span>
+                <span class="token property">"temp_fc"</span><span class="token operator">:</span><span class="token number">5</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_class"</span><span class="token operator">:</span><span class="token string">"&lt;3级"</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_dir"</span><span class="token operator">:</span><span class="token string">"西北风"</span><span class="token punctuation">,</span>
+                <span class="token property">"rh"</span><span class="token operator">:</span><span class="token number">39</span><span class="token punctuation">,</span>
+                <span class="token property">"prec_1h"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token property">"clouds"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token property">"data_time"</span><span class="token operator">:</span><span class="token string">"2020-04-02 03:00:00"</span>
+            <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+            <span class="token punctuation">&#123;</span>
+                <span class="token property">"text"</span><span class="token operator">:</span><span class="token string">"晴"</span><span class="token punctuation">,</span>
+                <span class="token property">"temp_fc"</span><span class="token operator">:</span><span class="token number">4</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_class"</span><span class="token operator">:</span><span class="token string">"&lt;3级"</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_dir"</span><span class="token operator">:</span><span class="token string">"西北风"</span><span class="token punctuation">,</span>
+                <span class="token property">"rh"</span><span class="token operator">:</span><span class="token number">42</span><span class="token punctuation">,</span>
+                <span class="token property">"prec_1h"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token property">"clouds"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token property">"data_time"</span><span class="token operator">:</span><span class="token string">"2020-04-02 04:00:00"</span>
+            <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+            <span class="token punctuation">&#123;</span>
+                <span class="token property">"text"</span><span class="token operator">:</span><span class="token string">"晴"</span><span class="token punctuation">,</span>
+                <span class="token property">"temp_fc"</span><span class="token operator">:</span><span class="token number">4</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_class"</span><span class="token operator">:</span><span class="token string">"&lt;3级"</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_dir"</span><span class="token operator">:</span><span class="token string">"西北风"</span><span class="token punctuation">,</span>
+                <span class="token property">"rh"</span><span class="token operator">:</span><span class="token number">45</span><span class="token punctuation">,</span>
+                <span class="token property">"prec_1h"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token property">"clouds"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token property">"data_time"</span><span class="token operator">:</span><span class="token string">"2020-04-02 05:00:00"</span>
+            <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+            <span class="token punctuation">&#123;</span>
+                <span class="token property">"text"</span><span class="token operator">:</span><span class="token string">"晴"</span><span class="token punctuation">,</span>
+                <span class="token property">"temp_fc"</span><span class="token operator">:</span><span class="token number">5</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_class"</span><span class="token operator">:</span><span class="token string">"&lt;3级"</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_dir"</span><span class="token operator">:</span><span class="token string">"西北风"</span><span class="token punctuation">,</span>
+                <span class="token property">"rh"</span><span class="token operator">:</span><span class="token number">40</span><span class="token punctuation">,</span>
+                <span class="token property">"prec_1h"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token property">"clouds"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token property">"data_time"</span><span class="token operator">:</span><span class="token string">"2020-04-02 06:00:00"</span>
+            <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+            <span class="token punctuation">&#123;</span>
+                <span class="token property">"text"</span><span class="token operator">:</span><span class="token string">"晴"</span><span class="token punctuation">,</span>
+                <span class="token property">"temp_fc"</span><span class="token operator">:</span><span class="token number">7</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_class"</span><span class="token operator">:</span><span class="token string">"&lt;3级"</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_dir"</span><span class="token operator">:</span><span class="token string">"西北风"</span><span class="token punctuation">,</span>
+                <span class="token property">"rh"</span><span class="token operator">:</span><span class="token number">34</span><span class="token punctuation">,</span>
+                <span class="token property">"prec_1h"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token property">"clouds"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token property">"data_time"</span><span class="token operator">:</span><span class="token string">"2020-04-02 07:00:00"</span>
+            <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+            <span class="token punctuation">&#123;</span>
+                <span class="token property">"text"</span><span class="token operator">:</span><span class="token string">"晴"</span><span class="token punctuation">,</span>
+                <span class="token property">"temp_fc"</span><span class="token operator">:</span><span class="token number">8</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_class"</span><span class="token operator">:</span><span class="token string">"&lt;3级"</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_dir"</span><span class="token operator">:</span><span class="token string">"西北风"</span><span class="token punctuation">,</span>
+                <span class="token property">"rh"</span><span class="token operator">:</span><span class="token number">29</span><span class="token punctuation">,</span>
+                <span class="token property">"prec_1h"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token property">"clouds"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token property">"data_time"</span><span class="token operator">:</span><span class="token string">"2020-04-02 08:00:00"</span>
+            <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+            <span class="token punctuation">&#123;</span>
+                <span class="token property">"text"</span><span class="token operator">:</span><span class="token string">"晴"</span><span class="token punctuation">,</span>
+                <span class="token property">"temp_fc"</span><span class="token operator">:</span><span class="token number">11</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_class"</span><span class="token operator">:</span><span class="token string">"&lt;3级"</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_dir"</span><span class="token operator">:</span><span class="token string">"西北风"</span><span class="token punctuation">,</span>
+                <span class="token property">"rh"</span><span class="token operator">:</span><span class="token number">29</span><span class="token punctuation">,</span>
+                <span class="token property">"prec_1h"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token property">"clouds"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token property">"data_time"</span><span class="token operator">:</span><span class="token string">"2020-04-02 09:00:00"</span>
+            <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+            <span class="token punctuation">&#123;</span>
+                <span class="token property">"text"</span><span class="token operator">:</span><span class="token string">"晴"</span><span class="token punctuation">,</span>
+                <span class="token property">"temp_fc"</span><span class="token operator">:</span><span class="token number">13</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_class"</span><span class="token operator">:</span><span class="token string">"&lt;3级"</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_dir"</span><span class="token operator">:</span><span class="token string">"西北风"</span><span class="token punctuation">,</span>
+                <span class="token property">"rh"</span><span class="token operator">:</span><span class="token number">29</span><span class="token punctuation">,</span>
+                <span class="token property">"prec_1h"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token property">"clouds"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token property">"data_time"</span><span class="token operator">:</span><span class="token string">"2020-04-02 10:00:00"</span>
+            <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+            <span class="token punctuation">&#123;</span>
+                <span class="token property">"text"</span><span class="token operator">:</span><span class="token string">"晴"</span><span class="token punctuation">,</span>
+                <span class="token property">"temp_fc"</span><span class="token operator">:</span><span class="token number">16</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_class"</span><span class="token operator">:</span><span class="token string">"&lt;3级"</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_dir"</span><span class="token operator">:</span><span class="token string">"西北风"</span><span class="token punctuation">,</span>
+                <span class="token property">"rh"</span><span class="token operator">:</span><span class="token number">29</span><span class="token punctuation">,</span>
+                <span class="token property">"prec_1h"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token property">"clouds"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token property">"data_time"</span><span class="token operator">:</span><span class="token string">"2020-04-02 11:00:00"</span>
+            <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+            <span class="token punctuation">&#123;</span>
+                <span class="token property">"text"</span><span class="token operator">:</span><span class="token string">"晴"</span><span class="token punctuation">,</span>
+                <span class="token property">"temp_fc"</span><span class="token operator">:</span><span class="token number">17</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_class"</span><span class="token operator">:</span><span class="token string">"3~4级"</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_dir"</span><span class="token operator">:</span><span class="token string">"西北风"</span><span class="token punctuation">,</span>
+                <span class="token property">"rh"</span><span class="token operator">:</span><span class="token number">24</span><span class="token punctuation">,</span>
+                <span class="token property">"prec_1h"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token property">"clouds"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token property">"data_time"</span><span class="token operator">:</span><span class="token string">"2020-04-02 12:00:00"</span>
+            <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+            <span class="token punctuation">&#123;</span>
+                <span class="token property">"text"</span><span class="token operator">:</span><span class="token string">"晴"</span><span class="token punctuation">,</span>
+                <span class="token property">"temp_fc"</span><span class="token operator">:</span><span class="token number">18</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_class"</span><span class="token operator">:</span><span class="token string">"3~4级"</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_dir"</span><span class="token operator">:</span><span class="token string">"西北风"</span><span class="token punctuation">,</span>
+                <span class="token property">"rh"</span><span class="token operator">:</span><span class="token number">19</span><span class="token punctuation">,</span>
+                <span class="token property">"prec_1h"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token property">"clouds"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token property">"data_time"</span><span class="token operator">:</span><span class="token string">"2020-04-02 13:00:00"</span>
+            <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+            <span class="token punctuation">&#123;</span>
+                <span class="token property">"text"</span><span class="token operator">:</span><span class="token string">"晴"</span><span class="token punctuation">,</span>
+                <span class="token property">"temp_fc"</span><span class="token operator">:</span><span class="token number">19</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_class"</span><span class="token operator">:</span><span class="token string">"3~4级"</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_dir"</span><span class="token operator">:</span><span class="token string">"西北风"</span><span class="token punctuation">,</span>
+                <span class="token property">"rh"</span><span class="token operator">:</span><span class="token number">14</span><span class="token punctuation">,</span>
+                <span class="token property">"prec_1h"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token property">"clouds"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token property">"data_time"</span><span class="token operator">:</span><span class="token string">"2020-04-02 14:00:00"</span>
+            <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+            <span class="token punctuation">&#123;</span>
+                <span class="token property">"text"</span><span class="token operator">:</span><span class="token string">"晴"</span><span class="token punctuation">,</span>
+                <span class="token property">"temp_fc"</span><span class="token operator">:</span><span class="token number">19</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_class"</span><span class="token operator">:</span><span class="token string">"&lt;3级"</span><span class="token punctuation">,</span>
+                <span class="token property">"wind_dir"</span><span class="token operator">:</span><span class="token string">"西风"</span><span class="token punctuation">,</span>
+                <span class="token property">"rh"</span><span class="token operator">:</span><span class="token number">17</span><span class="token punctuation">,</span>
+                <span class="token property">"prec_1h"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token property">"clouds"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token property">"data_time"</span><span class="token operator">:</span><span class="token string">"2020-04-02 15:00:00"</span>
+            <span class="token punctuation">&#125;</span>
+        <span class="token punctuation">]</span>
+    <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+    <span class="token property">"message"</span><span class="token operator">:</span><span class="token string">"success"</span>
+<span class="token punctuation">&#125;</span></code></pre></div></section><div id="reward-container"><span class="hty-icon-button button-glow" id="reward-button" title="打赏" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === &quot;none&quot;) ? &quot;block&quot; : &quot;none&quot;;"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-hand-coin-line"></use></svg></span><div id="reward-comment">I'm so cute. Please give me money.</div><div id="qr" style="display:none;"><div style="display:inline-block"><a href="/images/zfb.jpg"><img loading="lazy" src="/images/zfb.jpg" alt="支付宝" title="支付宝"></a><div><span style="color:#00A3EE"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-alipay-line"></use></svg></span></div></div><div style="display:inline-block"><a href="/images/wx.jpg"><img loading="lazy" src="/images/wx.jpg" alt="微信支付" title="微信支付"></a><div><span style="color:#2DC100"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-wechat-pay-line"></use></svg></span></div></div></div></div><ul class="post-copyright"><li class="post-copyright-author"><strong>本文作者：</strong>oliver</li><li class="post-copyright-link"><strong>本文链接：</strong><a href="https://oyzbmmmm.github.io/2022/02/21/ding-ding-drink-boot/" title="创建一个可以定时提醒喝水的钉钉机器人">https://oyzbmmmm.github.io/2022/02/21/ding-ding-drink-boot/</a></li><li class="post-copyright-license"><strong>版权声明：</strong>本博客所有文章除特别声明外，均默认采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" target="_blank" rel="noopener" title="CC BY-NC-SA 4.0 "><svg class="icon"><use xlink:href="#icon-creative-commons-line"></use></svg><svg class="icon"><use xlink:href="#icon-creative-commons-by-line"></use></svg><svg class="icon"><use xlink:href="#icon-creative-commons-nc-line"></use></svg><svg class="icon"><use xlink:href="#icon-creative-commons-sa-line"></use></svg></a> 许可协议。</li></ul></article><div class="post-nav"><div class="post-nav-item"></div><div class="post-nav-item"><a class="post-nav-next" href="/2022/02/17/oicq-setu-boot/" rel="next" title="一个可以发送色图的QQ机器人"><span class="post-nav-text">一个可以发送色图的QQ机器人</span><svg class="icon" aria-hidden="true"><use xlink:href="#icon-arrow-right-s-line"></use></svg></a></div></div></div><div class="hty-card" id="comment"><div class="comment-tooltip text-center"><span>要不要和我说些什么？</span><br></div><div id="waline"></div><script src="/js/comments/waline.js" type="module" defer></script></div></main><footer class="sidebar-translate" id="footer"><div class="copyright"><span>&copy; 2022 </span><span class="with-love" id="animate"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-cloud-line"></use></svg></span><span class="author"> oliver</span></div><div class="powered"><span>由 <a href="https://hexo.io" target="_blank" rel="noopener">Hexo</a> 驱动 v6.0.0</span><span class="footer-separator">|</span><span>主题 - <a rel="noopener" href="https://github.com/YunYouJun/hexo-theme-yun" target="_blank"><span>Yun</span></a> v1.8.8</span></div><div class="live-time"><span>本博客已萌萌哒地运行</span><span id="display_live_time"></span><span class="moe-text">(●'◡'●)</span><script>function blog_live_time() {
+  setTimeout(blog_live_time, 1000);
+  const start = new Date('2022-02-16T14:13:00');
+  const now = new Date();
+  const timeDiff = (now.getTime() - start.getTime());
+  const msPerMinute = 60 * 1000;
+  const msPerHour = 60 * msPerMinute;
+  const msPerDay = 24 * msPerHour;
+  const passDay = Math.floor(timeDiff / msPerDay);
+  const passHour = Math.floor((timeDiff % msPerDay) / 60 / 60 / 1000);
+  const passMinute = Math.floor((timeDiff % msPerHour) / 60 / 1000);
+  const passSecond = Math.floor((timeDiff % msPerMinute) / 1000);
+  display_live_time.innerHTML = ` ${passDay} 天 ${passHour} 小时 ${passMinute} 分 ${passSecond} 秒`;
+}
+blog_live_time();
+</script></div></footer><a class="hty-icon-button" id="back-to-top" aria-label="back-to-top" href="#"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-arrow-up-s-line"></use></svg><svg class="progress-circle-container" viewBox="0 0 100 100"><circle class="progress-circle" id="progressCircle" cx="50" cy="50" r="48" fill="none" stroke="#0078E7" stroke-width="2" stroke-linecap="round"></circle></svg></a><a class="popup-trigger hty-icon-button icon-search" id="search" href="javascript:;" title="搜索"><span class="site-state-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-search-line"></use></svg></span></a><script>window.addEventListener("DOMContentLoaded", () => {
+  // Handle and trigger popup window
+  document.querySelector(".popup-trigger").addEventListener("click", () => {
+    document.querySelector(".popup").classList.add("show");
+    setTimeout(() => {
+      document.querySelector(".search-input").focus();
+    }, 100);
+  });
+
+  // Monitor main search box
+  const onPopupClose = () => {
+    document.querySelector(".popup").classList.remove("show");
+  };
+
+  document.querySelector(".popup-btn-close").addEventListener("click", () => {
+    onPopupClose();
+  });
+
+  window.addEventListener("keyup", event => {
+    if (event.key === "Escape") {
+      onPopupClose();
+    }
+  });
+});
+</script><script src="/js/search/local-search.js" defer type="module"></script><div class="popup search-popup"><div class="search-header"><span class="popup-btn-close close-icon hty-icon-button"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-close-line"></use></svg></span></div><div class="search-input-container"><input class="search-input" id="local-search-input" type="text" placeholder="搜索..." value=""></div><div id="local-search-result"></div></div></div></body></html>
